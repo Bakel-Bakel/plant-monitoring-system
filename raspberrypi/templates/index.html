@@ -93,7 +93,20 @@
     <h2>📷 Live Camera Feed</h2>
     <img src="{{ url_for('video_feed') }}" alt="Live Video Feed">
   </div>
+  const socket = io();
 
+  // Add these for debugging
+  socket.on('connect', () => {
+    console.log('Connected to server');
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('Disconnected from server');
+  });
+  
+  socket.on('connect_error', (error) => {
+    console.log('Connection error:', error);
+  });
   <script>
     const socket = io();
     socket.on('sensor_data', data => {
