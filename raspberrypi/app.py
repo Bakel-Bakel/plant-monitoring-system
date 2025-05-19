@@ -5,7 +5,7 @@ import threading
 import cv2
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*") 
 
 # Adjust the serial port as necessary (e.g., /dev/ttyUSB0, /dev/ttyACM0)
 ser = serial.Serial('/dev/ttyUSB0', 9600)
