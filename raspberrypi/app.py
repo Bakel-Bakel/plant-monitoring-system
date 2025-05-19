@@ -17,6 +17,9 @@ ser = serial.Serial('/dev/ttyUSB0', 9600)
 # Global camera object
 camera = None
 
+# Global list to store all sensor data
+all_sensor_data = []
+
 def get_camera():
     global camera
     if camera is None:
@@ -31,13 +34,18 @@ def read_from_arduino():
             line = ser.readline().decode().strip()
             parts = line.split(',')
             if len(parts) == 5:
+                timestamp = datetime.now().isoformat()
                 data = {
+                    'timestamp': timestamp,
                     'temperature': parts[0],
                     'humidity': parts[1],
                     'ph': parts[2],
                     'soil': parts[3],
                     'lux': parts[4]
                 }
+
+                # Store data in global list
+                all_sensor_data.append(data)
 
                 # Emit to frontend
                 socketio.emit('sensor_data', data)
@@ -100,6 +108,28 @@ def capture_image():
         mimetype='image/jpeg',
         as_attachment=True,
         download_name=f'plant_capture_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.jpg'
+    )
+
+@app.route('/get_all_data')
+def get_all_data():
+    # Create CSV content
+    headers = ['Timestamp', 'Temperature', 'Humidity', 'pH', 'Soil Moisture', 'Light']
+    csv_content = [
+        headers.join(','),
+        *[f"{data['timestamp']},{data['temperature']},{data['humidity']},{data['ph']},{data['soil']},{data['lux']}"
+          for data in all_sensor_data]
+    ]
+    csv_content = '\n'.join(csv_content)
+    
+    # Create in-memory file
+    csv_io = io.BytesIO(csv_content.encode())
+    csv_io.seek(0)
+    
+    return send_file(
+        csv_io,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'plant_data_all_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.csv'
     )
 
 if __name__ == '__main__':

@@ -212,46 +212,25 @@
       if (downloadButton.disabled) return;
       
       downloadButton.disabled = true;
-      let countdown = 5;
+      downloadButton.textContent = 'Downloading...';
       
-      // Clear previous data
-      sensorDataArray = [];
-      
-      // Start countdown
-      const countdownInterval = setInterval(() => {
-        if (countdown > 0) {
-          downloadButton.textContent = `Collecting data... ${countdown}s`;
-          countdown--;
-        } else {
-          clearInterval(countdownInterval);
-          downloadButton.textContent = 'Processing...';
-          
-          // Create CSV content
-          const headers = ['Timestamp', 'Temperature', 'Humidity', 'pH', 'Soil Moisture', 'Light'];
-          const csvContent = [
-            headers.join(','),
-            ...sensorDataArray.map(data => {
-              const timestamp = new Date().toISOString();
-              return `${timestamp},${data.temperature},${data.humidity},${data.ph},${data.soil},${data.lux}`;
-            })
-          ].join('\n');
-          
-          // Create and download file
-          const blob = new Blob([csvContent], { type: 'text/csv' });
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `plant_data_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-          
-          // Reset button
-          downloadButton.textContent = 'Download Data';
-          downloadButton.disabled = false;
-        }
-      }, 1000);
+      try {
+        const response = await fetch('/get_all_data');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `plant_data_all_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error downloading data:', error);
+      } finally {
+        downloadButton.textContent = 'Download Data';
+        downloadButton.disabled = false;
+      }
     });
 
     // Capture Plant Button
