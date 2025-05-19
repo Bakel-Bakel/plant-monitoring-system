@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🌱 Plant Monitoring Dashboard</title>
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
   <style>
@@ -10,7 +11,7 @@
       background-color: #e8f5e9;
       color: #2e7d32;
       margin: 0;
-      padding: 2rem;
+      padding: 1rem;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -19,6 +20,8 @@
     h1 {
       color: #1b5e20;
       margin-bottom: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
     }
 
     .container {
@@ -26,16 +29,21 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 1rem;
+      width: 100%;
+      max-width: 1200px;
     }
 
     .card {
       background-color: white;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      padding: 1.5rem;
+      padding: 1rem;
       text-align: center;
-      width: 220px;
+      width: calc(50% - 1rem);
+      min-width: 140px;
+      max-width: 220px;
       transition: transform 0.2s;
+      box-sizing: border-box;
     }
 
     .card:hover {
@@ -45,7 +53,7 @@
     .card span {
       display: block;
       margin-top: 0.5rem;
-      font-size: 1.8rem;
+      font-size: 1.5rem;
       font-weight: bold;
       color: #388e3c;
     }
@@ -53,13 +61,31 @@
     .video-container {
       margin-top: 2rem;
       text-align: center;
+      width: 100%;
+      max-width: 640px;
     }
 
     .video-container img {
       border: 4px solid #81c784;
       border-radius: 10px;
-      width: 640px;
-      height: 480px;
+      width: 100%;
+      height: auto;
+      max-height: 480px;
+      object-fit: contain;
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        width: calc(100% - 2rem);
+      }
+      
+      h1 {
+        font-size: 1.2rem;
+      }
+      
+      .card span {
+        font-size: 1.2rem;
+      }
     }
   </style>
 </head>
@@ -95,21 +121,39 @@
   </div>
   
   <script>
-    const socket = io();
+    // Get the current hostname and port
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const port = window.location.port;
+    const socketUrl = `${protocol}//${hostname}:${port}`;
 
-// Add these for debugging
-socket.on('connect', () => {
-  console.log('Connected to server');
-});
+    // Initialize Socket.IO with explicit configuration
+    const socket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
 
-socket.on('disconnect', () => {
-  console.log('Disconnected from server');
-});
+    // Debug connection status
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      document.body.style.backgroundColor = '#e8f5e9'; // Normal background
+    });
 
-socket.on('connect_error', (error) => {
-  console.log('Connection error:', error);
-});
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+      document.body.style.backgroundColor = '#ffebee'; // Error background
+    });
+
+    socket.on('connect_error', (error) => {
+      console.log('Connection error:', error);
+      document.body.style.backgroundColor = '#ffebee'; // Error background
+    });
+
+    // Handle sensor data updates
     socket.on('sensor_data', data => {
+      console.log('Received sensor data:', data);
       document.getElementById('temp').textContent = data.temperature;
       document.getElementById('humidity').textContent = data.humidity;
       document.getElementById('ph').textContent = data.ph;

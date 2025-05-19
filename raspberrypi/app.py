@@ -1,11 +1,13 @@
 from flask import Flask, render_template, Response
 from flask_socketio import SocketIO
+from flask_cors import CORS
 import serial
 import threading
 import cv2
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*") 
+CORS(app)  # Enable CORS for all routes
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Adjust the serial port as necessary (e.g., /dev/ttyUSB0, /dev/ttyACM0)
 ser = serial.Serial('/dev/ttyUSB0', 9600)
@@ -40,12 +42,17 @@ def read_from_arduino():
 
 def generate_camera():
     camera = cv2.VideoCapture(0)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
     while True:
         success, frame = camera.read()
         if not success:
             break
         else:
-            ret, buffer = cv2.imencode('.jpg', frame)
+            # Resize frame for better mobile performance
+            frame = cv2.resize(frame, (640, 480))
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
             frame_bytes = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
@@ -56,8 +63,9 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(generate_camera(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(generate_camera(),
+                   mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
     threading.Thread(target=read_from_arduino, daemon=True).start()
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
