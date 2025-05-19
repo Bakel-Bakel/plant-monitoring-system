@@ -147,7 +147,7 @@ def get_all_data():
         csv_io,
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f'plant_data_all_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv'
+        download_name=f'plant_data_all_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.csv'
     )
 
 if __name__ == '__main__':
