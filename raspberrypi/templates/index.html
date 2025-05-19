@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Plant Monitor Dashboard</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e5f9e0;
+      color: #2e7d32;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2em;
+    }
+    h1 {
+      color: #1b5e20;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 1.5em;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin: 1em;
+      width: 250px;
+      text-align: center;
+    }
+    .card span {
+      font-size: 2em;
+      font-weight: bold;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌱 Plant Monitoring Dashboard</h1>
+  <div class="container">
+    <div class="card">🌡 Temp: <span id="temp">--</span> °C</div>
+    <div class="card">💧 Humidity: <span id="humidity">--</span> %</div>
+    <div class="card">🧪 pH: <span id="ph">--</span></div>
+    <div class="card">🌾 Soil: <span id="soil">--</span></div>
+    <div class="card">🔆 Light: <span id="lux">--</span> lux</div>
+  </div>
+
+  <script>
+    const socket = io();
+    socket.on('sensor_data', data => {
+      document.getElementById('temp').textContent = data.temperature;
+      document.getElementById('humidity').textContent = data.humidity;
+      document.getElementById('ph').textContent = data.ph;
+      document.getElementById('soil').textContent = data.soil;
+      document.getElementById('lux').textContent = data.lux;
+    });
+  </script>
+</body>
+</html>
