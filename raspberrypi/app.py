@@ -14,13 +14,22 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 # Adjust the serial port as necessary (e.g., /dev/ttyUSB0, /dev/ttyACM0)
 import serial.tools.list_ports
 
+
 ports = serial.tools.list_ports.comports()
+ser = None
+
 for p in ports:
-    if 'USB' in p.device:
+    # Match based on vendor/product or description
+    if ('Arduino' in p.description or
+        'ttyUSB' in p.device or
+        'ACM' in p.device):
         ser = serial.Serial(p.device, 9600)
+        print(f"Connected to Arduino on {p.device}")
         break
-else:
-    raise Exception("No USB serial device found.")
+
+if ser is None:
+    raise Exception("No Arduino-compatible USB serial device found.")
+
 
 
 # Global camera object
@@ -143,4 +152,4 @@ def get_all_data():
 
 if __name__ == '__main__':
     threading.Thread(target=read_from_arduino, daemon=True).start()
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
