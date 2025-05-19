@@ -1,13 +1,14 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, Response
 from flask_socketio import SocketIO
 import serial
 import threading
+import cv2
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-# Connect to Arduino serial
-ser = serial.Serial('/dev/ttyUSB0', 9600)  # Adjust port if necessary
+# Adjust the serial port as necessary (e.g., /dev/ttyUSB0, /dev/ttyACM0)
+ser = serial.Serial('/dev/ttyUSB0', 9600)
 
 def read_from_arduino():
     while True:
@@ -22,13 +23,40 @@ def read_from_arduino():
                     'soil': parts[3],
                     'lux': parts[4]
                 }
+
+                # Emit to frontend
                 socketio.emit('sensor_data', data)
+
+                # Print to terminal
+                print("[Sensor Readings]")
+                print(f"  Temperature: {data['temperature']} °C")
+                print(f"  Humidity   : {data['humidity']} %")
+                print(f"  pH Value   : {data['ph']}")
+                print(f"  Soil Moist.: {data['soil']}")
+                print(f"  Light Lux  : {data['lux']}")
+                print("--------------------------\n")
         except Exception as e:
-            print(f"Error reading serial: {e}")
+            print(f"[ERROR] Serial read failed: {e}")
+
+def generate_camera():
+    camera = cv2.VideoCapture(0)
+    while True:
+        success, frame = camera.read()
+        if not success:
+            break
+        else:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_camera(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
     threading.Thread(target=read_from_arduino, daemon=True).start()

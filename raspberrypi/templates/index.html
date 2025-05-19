@@ -1,50 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Plant Monitor Dashboard</title>
+  <title>🌱 Plant Monitoring Dashboard</title>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #e5f9e0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #e8f5e9;
       color: #2e7d32;
+      margin: 0;
+      padding: 2rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2em;
     }
+
     h1 {
       color: #1b5e20;
+      margin-bottom: 1rem;
     }
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 1.5em;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      margin: 1em;
-      width: 250px;
-      text-align: center;
-    }
-    .card span {
-      font-size: 2em;
-      font-weight: bold;
-    }
+
     .container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
+      gap: 1rem;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+      text-align: center;
+      width: 220px;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card span {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #388e3c;
+    }
+
+    .video-container {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .video-container img {
+      border: 4px solid #81c784;
+      border-radius: 10px;
+      width: 640px;
+      height: 480px;
     }
   </style>
 </head>
 <body>
-  <h1>🌱 Plant Monitoring Dashboard</h1>
+  <h1>🌿 Real-Time Plant Monitoring</h1>
+
   <div class="container">
-    <div class="card">🌡 Temp: <span id="temp">--</span> °C</div>
-    <div class="card">💧 Humidity: <span id="humidity">--</span> %</div>
-    <div class="card">🧪 pH: <span id="ph">--</span></div>
-    <div class="card">🌾 Soil: <span id="soil">--</span></div>
-    <div class="card">🔆 Light: <span id="lux">--</span> lux</div>
+    <div class="card">
+      🌡 Temperature
+      <span id="temp">--</span> °C
+    </div>
+    <div class="card">
+      💧 Humidity
+      <span id="humidity">--</span> %
+    </div>
+    <div class="card">
+      🧪 pH Level
+      <span id="ph">--</span>
+    </div>
+    <div class="card">
+      🌾 Soil Moisture
+      <span id="soil">--</span>
+    </div>
+    <div class="card">
+      🔆 Light Intensity
+      <span id="lux">--</span> lux
+    </div>
+  </div>
+
+  <div class="video-container">
+    <h2>📷 Live Camera Feed</h2>
+    <img src="{{ url_for('video_feed') }}" alt="Live Video Feed">
   </div>
 
   <script>
