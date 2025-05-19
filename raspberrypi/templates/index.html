@@ -74,7 +74,44 @@
       object-fit: contain;
     }
 
+    .button-container {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .action-button {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .action-button:hover {
+      background-color: #388e3c;
+    }
+
+    .action-button:disabled {
+      background-color: #9e9e9e;
+      cursor: not-allowed;
+    }
+
     @media (max-width: 480px) {
+      .button-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .action-button {
+        width: 100%;
+        max-width: 300px;
+      }
+      
       .card {
         width: calc(100% - 2rem);
       }
@@ -118,6 +155,10 @@
   <div class="video-container">
     <h2>📷 Live Camera Feed</h2>
     <img src="{{ url_for('video_feed') }}" alt="Live Video Feed">
+    <div class="button-container">
+      <button id="downloadData" class="action-button">Download Data</button>
+      <button id="capturePlant" class="action-button">Capture Plant</button>
+    </div>
   </div>
   
   <script>
@@ -152,6 +193,7 @@
     });
 
     // Handle sensor data updates
+    let sensorDataArray = [];
     socket.on('sensor_data', data => {
       console.log('Received sensor data:', data);
       document.getElementById('temp').textContent = data.temperature;
@@ -159,6 +201,84 @@
       document.getElementById('ph').textContent = data.ph;
       document.getElementById('soil').textContent = data.soil;
       document.getElementById('lux').textContent = data.lux;
+      
+      // Store data for download
+      sensorDataArray.push(data);
+    });
+
+    // Download Data Button
+    const downloadButton = document.getElementById('downloadData');
+    downloadButton.addEventListener('click', async () => {
+      if (downloadButton.disabled) return;
+      
+      downloadButton.disabled = true;
+      let countdown = 5;
+      
+      // Clear previous data
+      sensorDataArray = [];
+      
+      // Start countdown
+      const countdownInterval = setInterval(() => {
+        if (countdown > 0) {
+          downloadButton.textContent = `Collecting data... ${countdown}s`;
+          countdown--;
+        } else {
+          clearInterval(countdownInterval);
+          downloadButton.textContent = 'Processing...';
+          
+          // Create CSV content
+          const headers = ['Timestamp', 'Temperature', 'Humidity', 'pH', 'Soil Moisture', 'Light'];
+          const csvContent = [
+            headers.join(','),
+            ...sensorDataArray.map(data => {
+              const timestamp = new Date().toISOString();
+              return `${timestamp},${data.temperature},${data.humidity},${data.ph},${data.soil},${data.lux}`;
+            })
+          ].join('\n');
+          
+          // Create and download file
+          const blob = new Blob([csvContent], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `plant_data_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          
+          // Reset button
+          downloadButton.textContent = 'Download Data';
+          downloadButton.disabled = false;
+        }
+      }, 1000);
+    });
+
+    // Capture Plant Button
+    const captureButton = document.getElementById('capturePlant');
+    captureButton.addEventListener('click', async () => {
+      if (captureButton.disabled) return;
+      
+      captureButton.disabled = true;
+      captureButton.textContent = 'Capturing...';
+      
+      try {
+        const response = await fetch('/capture_image');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `plant_capture_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error capturing image:', error);
+      } finally {
+        captureButton.textContent = 'Capture Plant';
+        captureButton.disabled = false;
+      }
     });
   </script>
 </body>
