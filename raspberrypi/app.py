@@ -12,7 +12,16 @@ CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Adjust the serial port as necessary (e.g., /dev/ttyUSB0, /dev/ttyACM0)
-ser = serial.Serial('/dev/ttyUSB0', 9600)
+import serial.tools.list_ports
+
+ports = serial.tools.list_ports.comports()
+for p in ports:
+    if 'USB' in p.device:
+        ser = serial.Serial(p.device, 9600)
+        break
+else:
+    raise Exception("No USB serial device found.")
+
 
 # Global camera object
 camera = None
@@ -114,17 +123,17 @@ def capture_image():
 def get_all_data():
     # Create CSV content
     headers = ['Timestamp', 'Temperature', 'Humidity', 'pH', 'Soil Moisture', 'Light']
-    csv_lines = [",".join(headers)]
-    for data in all_sensor_data:
-        csv_lines.append(
-            f"{data['timestamp']},{data['temperature']},{data['humidity']},{data['ph']},{data['soil']},{data['lux']}"
-        )
-    csv_content = "\n".join(csv_lines)
-
+    csv_content = [
+        headers.join(','),
+        *[f"{data['timestamp']},{data['temperature']},{data['humidity']},{data['ph']},{data['soil']},{data['lux']}"
+          for data in all_sensor_data]
+    ]
+    csv_content = '\n'.join(csv_content)
+    
     # Create in-memory file
     csv_io = io.BytesIO(csv_content.encode())
     csv_io.seek(0)
-
+    
     return send_file(
         csv_io,
         mimetype='text/csv',
