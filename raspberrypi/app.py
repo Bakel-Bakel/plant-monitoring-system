@@ -114,17 +114,17 @@ def capture_image():
 def get_all_data():
     # Create CSV content
     headers = ['Timestamp', 'Temperature', 'Humidity', 'pH', 'Soil Moisture', 'Light']
-    csv_content = [
-        headers.join(','),
-        *[f"{data['timestamp']},{data['temperature']},{data['humidity']},{data['ph']},{data['soil']},{data['lux']}"
-          for data in all_sensor_data]
-    ]
-    csv_content = '\n'.join(csv_content)
-    
+    csv_lines = [",".join(headers)]
+    for data in all_sensor_data:
+        csv_lines.append(
+            f"{data['timestamp']},{data['temperature']},{data['humidity']},{data['ph']},{data['soil']},{data['lux']}"
+        )
+    csv_content = "\n".join(csv_lines)
+
     # Create in-memory file
     csv_io = io.BytesIO(csv_content.encode())
     csv_io.seek(0)
-    
+
     return send_file(
         csv_io,
         mimetype='text/csv',
